@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body,html{
+            background: linear-gradient(135deg, #232526 0%, #963be6 100%);
+            margin: 0;
+            padding: 0;
+            border: 0;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        canvas{
+            margin: 0;
+            padding: 0;
+            display: block; /*  ¯\_(ツ)_/¯  */
+            touch-action: none; 
+        }
+        h1{
+            position: absolute;
+            top: 50%;
+            left: 0;
+            margin: auto;
+            width: 100%;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            #menu-cc, #menu-pc {
+                left: 5px;
+                top: 5px;
+                padding: 8px 10px;
+                font-size: 1.1em;
+            }
+            #configBtn {
+                width: 48px;
+                height: 48px;
+                font-size: 1.5rem;
+                bottom: 10px;
+                right: 10px;
+            }
+            select, label {
+                font-size: 1em;
+            }
+        }
+    </style>
+    <title>Control MIDI CC</title>
+</head>
+
+<body>
+    <!-- Menú desplegable para seleccionar el parámetro CC -->
+    <div id="menu-cc" style="position:fixed;top:10px;left:10px;z-index:10;background:#222;padding:10px 20px;border-radius:8px;color:#fff;pointer-events:auto;">
+        <label for="ccParameter">Selecciona un parámetro CC:</label>
+        <select id="ccParameter">
+            <option value="1">CC 1 – Modulation</option>
+            <option value="24">CC 24 – Voice A Wave</option>
+            <option value="25">CC 25 – Voice B Wave</option>
+            <option value="26">CC 26 – Voice C Wave</option>
+            <option value="27">CC 27 – Voice D Wave</option>
+            <option value="28">CC 28 – LFO 2 Amount</option>
+            <option value="70">CC 70 – LFO 1 Amount</option>
+            <option value="71">CC 71 – Filter Resonance</option>
+            <option value="72">CC 72 – LFO 1 Rate</option>
+            <option value="73">CC 73 – LFO 2 Rate</option>
+            <option value="74">CC 74 – Filter Cutoff</option>
+            <option value="81">CC 81 – Amp Env Attack</option>
+            <option value="82">CC 82 – Amp Env Decay</option>
+            <option value="83">CC 83 – Amp Env Sustain</option>
+            <option value="84">CC 84 – Amp Env Release</option>
+            <option value="85">CC 85 – Filter Env Attack</option>
+            <option value="86">CC 86 – Filter Env Decay</option>
+            <option value="87">CC 87 – Filter Env Sustain</option>
+            <option value="88">CC 88 – Filter Env Release</option>
+            <option value="91">CC 91 – Chorus Depth</option>
+            <option value="92">CC 92 – Chorus Rate</option>
+            <option value="111">CC 111 – Voice A Fine Tuning</option>
+            <option value="112">CC 112 – Voice B Fine Tuning</option>
+            <option value="113">CC 113 – Voice C Fine Tuning</option>
+            <option value="114">CC 114 – Voice D Fine Tuning</option>
+            <option value="115">CC 115 – Voice A Coarse Tuning</option>
+            <option value="116">CC 116 – Voice B Coarse Tuning</option>
+            <option value="117">CC 117 – Voice C Coarse Tuning</option>
+            <option value="118">CC 118 – Voice D Coarse Tuning</option>
+        </select>
+    </div>
+    <!-- Menú desplegable para seleccionar el instrumento -->
+    <div id="menu-pc" style="position:fixed;top:60px;left:10px;z-index:10;background:#222;padding:10px 20px;border-radius:8px;color:#fff;pointer-events:auto;">
+        <label for="presetSelect">Preset:</label>
+        <select id="presetSelect">
+            <option value="0">Fat Bass</option>
+            <option value="1">Analog Bass</option>
+            <option value="2">Sub Oscillator Bass</option>
+            <option value="3">Distorted Bass</option>
+            <option value="4">Moog Bass</option>
+            <option value="5">Lead Synth</option>
+            <option value="6">Acid Lead</option>
+            <option value="7">Saw Lead</option>
+            <option value="8">Pulse Lead</option>
+            <option value="9">Classic Moog Lead</option>
+            <option value="10">Brass Section</option>
+            <option value="11">Trumpet Lead</option>
+            <option value="12">Wind Synth</option>
+            <option value="13">String Ensemble</option>
+            <option value="14">Pad Warm</option>
+            <option value="15">Space Pad</option>
+            <option value="16">Drone Pad</option>
+            <option value="17">Ambient Sweep</option>
+            <option value="18">Kick Drum</option>
+            <option value="19">Snare Drum</option>
+            <option value="20">Analog Percussion</option>
+            <option value="21">White Noise FX</option>
+            <option value="22">Arp Pattern</option>
+            <option value="23">LFO Madness</option>
+            <option value="24">Filter FX</option>
+            <option value="25">FM Bell</option>
+            <option value="26">Resonance Sweep</option>
+            <option value="27">Vibrato Lead</option>
+            <option value="28">Lo-Fi Synth</option>
+            <option value="29">Chiptune</option>
+            <option value="30">Random Modulation</option>
+            <option value="31">Modulated Sweep</option>
+        </select>
+    </div>
+    <canvas></canvas>
+
+    <!-- Botón de configuración (ruedita) -->
+    <button id="configBtn" style="
+        position:fixed;
+        bottom:20px;
+        right:20px;
+        z-index:100;
+        background:#222;
+        color:#fff;
+        border:none;
+        border-radius:50%;
+        width:56px;
+        height:56px;
+        font-size:2rem;
+        box-shadow:0 2px 8px #0008;
+        cursor:pointer;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        transition:background 0.2s;
+    ">
+        ⚙️
+    </button>
+
+    <!-- Botón de teclado -->
+    <button id="keyboardBtn" style="
+        position:fixed;
+        bottom:20px;
+        left:20px;
+        z-index:100;
+        background:#222;
+        color:#fff;
+        border:none;
+        border-radius:50%;
+        width:56px;
+        height:56px;
+        font-size:2rem;
+        box-shadow:0 2px 8px #0008;
+        cursor:pointer;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        transition:background 0.2s;
+    ">
+        🎹
+    </button>
+
+    <!-- Menú de teclado -->
+    <div id="keyboardMenu" style="
+        display:none;
+        position:fixed;
+        bottom:90px;
+        left:20px;
+        z-index:101;
+        background:#222c;
+        padding:18px 12px 12px 12px;
+        border-radius:14px;
+        box-shadow:0 2px 12px #000a;
+        user-select:none;
+    ">
+        <div id="piano" style="display:flex;position:relative;height:80px;">
+            <!-- Las teclas se generan por JS -->
+        </div>
+    </div>
+
+    <script>
+    window.onload = function() {
+        // Conexión WebSocket con el backend
+        const ws = new WebSocket(`ws://${location.hostname}:3001`);
+        function isOpen(ws) { return ws.readyState === ws.OPEN }
+        ws.addEventListener('open', () => console.log('Conexión WebSocket abierta'));
+        ws.addEventListener('message', (event) => console.log(`Mensaje recibido del servidor: ${event.data}`));
+
+        // Valores posibles para el parámetro
+        const valores = [0, 25, 50, 75, 99];
+
+        // Variable para el parámetro seleccionado
+        let selectedCC = 74;
+        document.getElementById('ccParameter').addEventListener('change', function() {
+            selectedCC = parseInt(this.value);
+        });
+
+        // Función para obtener un valor aleatorio del arreglo
+        function valorAleatorio() {
+            return valores[Math.floor(Math.random() * valores.length)];
+        }
+
+        // --- PARTE GRÁFICA ---
+        const frase = "ISFT 151";
+        let letrasReveladas = Array(frase.length).fill(false);
+        let mostrarInscribite = false;
+
+        var canvas = document.querySelector('canvas');
+        var c = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', function(){
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Círculos que caen
+        function Circle(x, y, radius, rgb, birth, life){
+            this.x = x;
+            this.y = y;
+            this.radius = radius;
+            this.vx = 0;
+            this.vy = 2 + Math.random()*2;
+            this.birth = birth;
+            this.life = life;
+            this.opacity = 1;
+            this.rgb = rgb;
+
+            this.draw = function() {
+                c.save();
+                c.beginPath();
+                c.arc(this.x, this.y, this.radius, Math.PI * 2, false);
+                c.shadowColor = 'rgba(' + this.rgb + ',0.7)';
+                c.shadowBlur = 25;
+                c.fillStyle = 'rgba(' + this.rgb +','+ this.opacity +')';
+                c.fill();
+                c.lineWidth = 3;
+                c.strokeStyle = 'rgba(255,255,255,0.5)';
+                c.stroke();
+                c.restore();
+            }
+
+            this.update = function(frame){
+                this.y += this.vy;
+                this.opacity = 1- (((frame - this.birth) * 1) / this.life);
+
+                if (this.y - this.radius > canvas.height || frame > this.birth + this.life){
+                    let idx = circleArray.indexOf(this);
+                    if (idx > -1) circleArray.splice(idx, 1);
+                } else{
+                    this.draw();
+                }
+            }
+        }
+
+        var circleArray = [];
+        var colorArray = [
+            '178,255,255',
+            '255,255,255',
+            '255,100,200',
+            '255,255,100',
+            '100,255,180',
+            '255,180,100'
+        ];
+
+        // Emoticones retro divertidos
+        const emoticones = [
+            "🦄", "👾", "🕹️", "💾", "🎮", "🦖", "🌈", "😎", "✨", "🎉", "🚀", "🧃", "🦊", "🐸", "🍄"
+        ];
+        let emotis = []; // {x, y, emoji, frame}
+
+        function mostrarEmoticon(x, y) {
+            emotis.push({
+                x: x,
+                y: y,
+                emoji: emoticones[Math.floor(Math.random() * emoticones.length)],
+                frame: 0
+            });
+        }
+
+        // Genera círculos que caen cada cierto tiempo
+        setInterval(() => {
+            if (mostrarInscribite) return;
+            const MAX_CIRCULOS = 10; // Cambia este valor al máximo deseado
+            if (circleArray.length >= MAX_CIRCULOS) return;
+            for (let j = 0; j < 2; j++) {
+                if (circleArray.length >= MAX_CIRCULOS) break; // No agregues más si llegaste al límite
+                let x = Math.random() * (canvas.width - 60) + 30;
+                let y = -30;
+                let radius = 50;
+                let rgb = colorArray[Math.floor(Math.random() * colorArray.length)];
+                let life = 500;
+                circleArray.push(new Circle(x, y, radius, rgb, frame, life));
+            }
+        }, 2000);
+
+        // Detecta clic/tap en círculo
+        function handleCircleClick(mx, my) {
+            if (mostrarInscribite) return;
+            for(let i = 0; i < circleArray.length; i++){
+                let circle = circleArray[i];
+                let dx = mx - circle.x;
+                let dy = my - circle.y;
+                if(dx*dx + dy*dy < circle.radius*circle.radius){
+                    // Envía valor MIDI con parámetro seleccionado y valor aleatorio
+                    let ccNumber = selectedCC;
+                    let ccValue = valorAleatorio();
+                    let ccMessage = JSON.stringify({ ccNumber, ccValue });
+                    if (isOpen(ws)) ws.send(ccMessage);
+
+                    // Muestra un emoticon retro en la posición del círculo
+                    mostrarEmoticon(circle.x, circle.y);
+
+                    // Revela la siguiente letra no revelada
+                    let idx = letrasReveladas.findIndex(l => !l);
+                    if (idx !== -1) letrasReveladas[idx] = true;
+
+                    // Si todas reveladas, mostrar INSCRIBITE
+                    if (letrasReveladas.every(l => l)) {
+                        mostrarInscribite = true;
+                        setTimeout(() => {
+                            mostrarInscribite = false;
+                            letrasReveladas = Array(frase.length).fill(false);
+                        }, 2000);
+                    }
+
+                    // Elimina el círculo
+                    circleArray.splice(i,1);
+                    break;
+                }
+            }
+        }
+
+        canvas.addEventListener('mousedown', function(event){
+            let rect = canvas.getBoundingClientRect();
+            let mx = event.clientX - rect.left;
+            let my = event.clientY - rect.top;
+            handleCircleClick(mx, my);
+        });
+
+        canvas.addEventListener('touchstart', function(event){
+            let rect = canvas.getBoundingClientRect();
+            let touch = event.touches[0];
+            let mx = touch.clientX - rect.left;
+            let my = touch.clientY - rect.top;
+            handleCircleClick(mx, my);
+        });
+
+        // Envía cambio de programa (instrumento) a través de WebSocket
+        function sendProgramChange(instrument) {
+            // ccNumber: 192 indica Program Change
+            const pcMessage = JSON.stringify({ ccNumber: 192, ccValue: instrument });
+            if (isOpen(ws)) ws.send(pcMessage);
+            console.log(`Enviando Cambio de Programa a instrumento ${instrument}`);
+        }
+
+        // Maneja el cambio de instrumento en el selector
+        document.getElementById('presetSelect').addEventListener('change', (e) => {
+            sendProgramChange(parseInt(e.target.value));
+        });
+
+        // Dibuja la frase y el mensaje final con degradado y sombra
+        function drawFrase() {
+            c.save();
+            let grad = c.createLinearGradient(
+                canvas.width/2 - 200, canvas.height/2, 
+                canvas.width/2 + 200, canvas.height/2
+            );
+            grad.addColorStop(0, "#00ffe0");
+            grad.addColorStop(0.5, "#fff");
+            grad.addColorStop(1, "#ff00cc");
+
+            c.font = "bold 12vw Nunito, sans-serif"; // <--- Cambiado
+            c.textAlign = "center";
+            c.textBaseline = "middle";
+            c.shadowColor = "#00ffe0";
+            c.shadowBlur = 30;
+            let display = "";
+            for (let i = 0; i < frase.length; i++) {
+                display += letrasReveladas[i] ? frase[i] : "_";
+            }
+            c.fillStyle = grad;
+            c.fillText(display, canvas.width/2, canvas.height/2);
+
+            if (mostrarInscribite) {
+                let grad2 = c.createLinearGradient(
+                    canvas.width/2 - 150, canvas.height/2 + 100, 
+                    canvas.width/2 + 150, canvas.height/2 + 100
+                );
+                grad2.addColorStop(0, "#fff200");
+                grad2.addColorStop(1, "#ff00cc");
+                c.font = "bold 9vw Nunito, sans-serif"; // <--- Cambiado
+                c.shadowColor = "#ff00cc";
+                c.shadowBlur = 40;
+                c.fillStyle = grad2;
+                c.fillText("INSCRIBITE YA", canvas.width/2, canvas.height/2 + canvas.height*0.15);
+            }
+            c.restore();
+        }
+
+        // Animación principal
+        var frame = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            frame += 1;
+            c.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < circleArray.length; i++ ){
+                circleArray[i].update(frame);
+            }
+            // Dibuja emoticones flotando
+            for (let i = emotis.length - 1; i >= 0; i--) {
+                let e = emotis[i];
+                c.save();
+                c.font = "60px serif";
+                c.globalAlpha = 1 - e.frame / 40;
+                c.fillText(e.emoji, e.x, e.y - e.frame * 2); // sube el emoji
+                c.restore();
+                e.frame++;
+                if (e.frame > 40) emotis.splice(i, 1);
+            }
+            drawFrase();
+        }
+
+        animate();
+
+        // Mostrar/ocultar menús con el botón de configuración
+        const configBtn = document.getElementById('configBtn');
+        const menuCC = document.getElementById('menu-cc');
+        const menuPC = document.getElementById('menu-pc');
+        let menusVisible = false;
+
+        // Oculta los menús al inicio
+        menuCC.style.display = 'none';
+        menuPC.style.display = 'none';
+
+        configBtn.addEventListener('click', () => {
+            menusVisible = !menusVisible;
+            menuCC.style.display = menusVisible ? 'block' : 'none';
+            menuPC.style.display = menusVisible ? 'block' : 'none';
+        });
+
+        // Opcional: Ocultar menús al inicio
+        // menusVisible = false;
+        // menuCC.style.display = 'none';
+        // menuPC.style.display = 'none';
+
+        // --- TECLADO VIRTUAL ---
+        const notes = [
+            { name: "C",  midi: 60, color: "white" },
+            { name: "C#", midi: 61, color: "black" },
+            { name: "D",  midi: 62, color: "white" },
+            { name: "D#", midi: 63, color: "black" },
+            { name: "E",  midi: 64, color: "white" },
+            { name: "F",  midi: 65, color: "white" },
+            { name: "F#", midi: 66, color: "black" },
+            { name: "G",  midi: 67, color: "white" },
+            { name: "G#", midi: 68, color: "black" },
+            { name: "A",  midi: 69, color: "white" },
+            { name: "A#", midi: 70, color: "black" },
+            { name: "B",  midi: 71, color: "white" },
+            { name: "C",  midi: 72, color: "white" } // C de la siguiente octava
+        ];
+
+        // Genera las teclas del piano
+        const pianoDiv = document.getElementById('piano');
+        pianoDiv.innerHTML = ""; // Limpia por si acaso
+
+        const whiteKeyWidth = 38;
+        const whiteKeyMargin = 2;
+        const blackKeyWidth = 28;
+        const blackKeyOffsets = [
+            // Offset en cantidad de teclas blancas desde la izquierda
+            0.7, // C# entre C (0) y D (1)
+            1.7, // D# entre D (1) y E (2)
+            3.7, // F# entre F (3) y G (4)
+            4.7, // G# entre G (4) y A (5)
+            5.7  // A# entre A (5) y B (6)
+        ];
+
+        // Primero, crea las teclas blancas
+        let whiteCount = 0;
+        notes.forEach((note, i) => {
+            if (note.color === "white") {
+                const btn = document.createElement('button');
+                btn.innerText = note.name;
+                btn.style.cssText = `
+                    width:${whiteKeyWidth}px;height:80px;margin:0 ${whiteKeyMargin}px;
+                    background:#fff;border:1px solid #bbb;
+                    border-radius:0 0 6px 6px;
+                    color:#222;font-size:1.1em;position:relative;z-index:1;
+                    box-shadow:0 2px 4px #0002;
+                    position:relative;left:0;
+                `;
+                btn.onclick = () => sendNote(note.midi);
+                pianoDiv.appendChild(btn);
+                whiteCount++;
+            }
+        });
+
+        // Luego, crea las teclas negras en posiciones absolutas
+        let whiteIndex = 0;
+        let blackIndex = 0;
+        notes.forEach((note, i) => {
+            if (note.color === "white") {
+                whiteIndex++;
+            } else if (note.color === "black") {
+                // La tecla negra va entre la blanca anterior y la siguiente
+                // Calcula la posición de la blanca anterior
+                const left = (whiteIndex - 1) * (whiteKeyWidth + 2 * whiteKeyMargin) + whiteKeyWidth - blackKeyWidth / 2;
+                const btn = document.createElement('button');
+                btn.innerText = note.name;
+                btn.style.cssText = `
+                    width:${blackKeyWidth}px;height:48px;position:absolute;top:0;
+                    left:${left}px;
+                    background:#222;border:1px solid #444;
+                    border-radius:0 0 4px 4px;
+                    color:#fff;font-size:0.9em;z-index:2;
+                    box-shadow:0 2px 8px #0008;
+                `;
+                btn.onclick = () => sendNote(note.midi);
+                pianoDiv.appendChild(btn);
+                blackIndex++;
+            }
+        });
+
+        // Mostrar/ocultar menú de teclado
+        const keyboardBtn = document.getElementById('keyboardBtn');
+        const keyboardMenu = document.getElementById('keyboardMenu');
+        let keyboardVisible = false;
+        keyboardBtn.addEventListener('click', () => {
+            keyboardVisible = !keyboardVisible;
+            keyboardMenu.style.display = keyboardVisible ? 'block' : 'none';
+        });
+
+        // Envía la nota al servidor
+        function sendNote(midiNote) {
+            if (isOpen(ws)) {
+                ws.send(JSON.stringify({ note: midiNote, velocity: 100 }));
+            }
+        }
+    }
+    </script>
+</body>
+
+</html>
